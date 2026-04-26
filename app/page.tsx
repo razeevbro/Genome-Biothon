@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { LogOut, PlusCircle, User, Flame, Dumbbell, Wheat, Droplet } from "lucide-react";
+import { toast } from "sonner";
+import { LogOut, PlusCircle, User, Flame, Dumbbell, Wheat, Droplet, Trash2 } from "lucide-react";
 
 type Meal = {
   id: string;
@@ -91,6 +92,16 @@ export default function HomePage() {
     router.replace("/sign-in");
   };
 
+  const deleteMeal = async (mealId: string) => {
+    const { error } = await supabase.from('meals').delete().eq('id', mealId);
+    if (!error) {
+      setMeals(meals.filter(m => m.id !== mealId));
+      toast.success("Meal removed!");
+    } else {
+      toast.error("Failed to remove meal.");
+    }
+  };
+
   if (loading) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 p-6">
@@ -115,7 +126,7 @@ export default function HomePage() {
 
   const totals = meals.reduce(
     (acc, meal) => {
-      const p = meal.portion_size;
+      const p = meal.portion_size / 100;
       const f = meal.food_items;
       if (f) {
         acc.calories += (f.calories_per_unit || 0) * p;
@@ -134,7 +145,7 @@ export default function HomePage() {
   // Calculate Nutrition Score
   let score = 100;
   if (totals.calories === 0) {
-    score = 0;
+    score = 100;
   } else {
     const calDiff = Math.abs(totals.calories - goals.calories);
     const calPenalty = Math.min(40, (calDiff / goals.calories) * 100);
@@ -295,14 +306,23 @@ export default function HomePage() {
                       {meal.meal_time}
                     </span>
                     <span className="text-xs font-bold text-neutral-400">
-                      {meal.portion_size} <span className="uppercase text-[9px] tracking-widest">{meal.food_items?.unit_type}</span>
+                      {meal.portion_size} <span className="uppercase text-[9px] tracking-widest">g</span>
                     </span>
                   </div>
                 </div>
-                <div className="text-right flex flex-col items-end">
-                  <div className="rounded-[1rem] bg-gradient-to-br from-orange-50 to-red-50 px-4 py-2 text-orange-600 font-black tracking-tight border border-orange-200/50 shadow-inner transition-transform group-hover:scale-105">
-                    {Math.round((meal.food_items?.calories_per_unit || 0) * meal.portion_size)} <span className="text-[10px] font-bold uppercase tracking-widest text-orange-500/80 ml-0.5">kcal</span>
+                <div className="text-right flex items-center gap-3">
+                  <div className="flex flex-col items-end">
+                    <div className="rounded-[1rem] bg-gradient-to-br from-orange-50 to-red-50 px-4 py-2 text-orange-600 font-black tracking-tight border border-orange-200/50 shadow-inner transition-transform group-hover:scale-105">
+                      {Math.round((meal.food_items?.calories_per_unit || 0) * (meal.portion_size / 100))} <span className="text-[10px] font-bold uppercase tracking-widest text-orange-500/80 ml-0.5">kcal</span>
+                    </div>
                   </div>
+                  <button 
+                    onClick={() => deleteMeal(meal.id)}
+                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                    title="Delete meal"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </li>
             ))}

@@ -139,7 +139,7 @@ export default function AddFoodPage() {
           >
             {foods.map((food) => (
               <option key={food.id} value={food.id}>
-                {food.name} ({food.unit_type})
+                {food.name} (per 100g)
               </option>
             ))}
           </select>
