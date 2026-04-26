@@ -1,13 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Activity, Target, UtensilsCrossed, Leaf, Droplet, Drumstick } from "lucide-react";
+import { Sparkles, Activity, Target, UtensilsCrossed, Leaf, Droplet, Drumstick, Stethoscope, Save, AlertTriangle, User } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export default function PlannerPage() {
   const [goal, setGoal] = useState("maintain");
   const [dietType, setDietType] = useState("veg");
-  const [region, setRegion] = useState("standard");
-  
+  const [region, setRegion] = useState("Hilly");
+  const [availability, setAvailability] = useState("standard");
+  const [planMeta, setPlanMeta] = useState<null | any>(null);
+  const [age, setAge] = useState(25);
+  const [gender, setGender] = useState<"male" | "female">("male");
+  const [diseases, setDiseases] = useState<string[]>([]);
   // Base states in metric
   const [weightKg, setWeightKg] = useState(70);
   const [heightCm, setHeightCm] = useState(165);
@@ -18,6 +24,8 @@ export default function PlannerPage() {
   
   const [loading, setLoading] = useState(false);
   const [plan, setPlan] = useState<null | any>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [aiSummary, setAiSummary] = useState("");
 
   // BMI always uses metric
   const bmi = weightKg / ((heightCm / 100) ** 2);
@@ -51,24 +59,52 @@ export default function PlannerPage() {
     e.preventDefault();
     setLoading(true);
     setPlan(null);
+    setPlanMeta(null);
+    setAiSummary("");
 
     try {
       const response = await fetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goal, dietPref: dietType, weight: weightKg, region })
+        body: JSON.stringify({ goal, dietPref: dietType, weight: weightKg, height: heightCm, gender, region, availability, age, diseases })
       });
       const data = await response.json();
       
       if (data.success) {
         setPlan(data.plan);
+        setPlanMeta(data.meta);
+        setAiSummary(data.aiSummary || "");
       } else {
-        console.error("Failed to generate plan");
+        toast.error(data.error || "Failed to generate plan");
       }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const savePlan = async () => {
+    if (!plan) return;
+    setIsSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please sign in to save your plan.");
+        setIsSaving(false);
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert({ user_id: user.id, current_plan: plan }, { onConflict: 'user_id' });
+        
+      if (error) throw error;
+      toast.success("Plan saved to your profile!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save plan.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -145,6 +181,61 @@ export default function PlannerPage() {
               </div>
             </label>
 
+            {/* AGE */}
+            <label className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-neutral-800 flex items-center gap-2">
+                  <Activity size={16} className="text-emerald-500" />
+                  Your Age
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min="10"
+                  max="100"
+                  value={age}
+                  onChange={(e) => setAge(Number(e.target.value))}
+                  className="w-full accent-emerald-500"
+                />
+                <span className="font-black text-emerald-600 w-16 text-right text-sm">
+                  {age} yrs
+                </span>
+              </div>
+            </label>
+
+            {/* GENDER */}
+            <label className="flex flex-col gap-3">
+              <span className="text-sm font-bold text-neutral-800 flex items-center gap-2">
+                <User size={16} className="text-blue-500" />
+                Biological Gender
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGender("male")}
+                  className={`rounded-xl border p-3 text-xs font-bold transition-all ${
+                    gender === "male"
+                      ? "border-blue-400 bg-blue-50 text-blue-700 shadow-sm"
+                      : "border-neutral-200 bg-white/80 text-neutral-500 hover:bg-neutral-50"
+                  }`}
+                >
+                  Male
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGender("female")}
+                  className={`rounded-xl border p-3 text-xs font-bold transition-all ${
+                    gender === "female"
+                      ? "border-pink-400 bg-pink-50 text-pink-700 shadow-sm"
+                      : "border-neutral-200 bg-white/80 text-neutral-500 hover:bg-neutral-50"
+                  }`}
+                >
+                  Female
+                </button>
+              </div>
+            </label>
+
             <div className="flex items-center justify-between pt-2 border-t border-neutral-200/60">
               <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Current BMI</span>
               <div className="flex items-center gap-2">
@@ -216,15 +307,70 @@ export default function PlannerPage() {
 
           <label className="flex flex-col gap-3">
             <span className="text-sm font-bold text-neutral-800 flex items-center gap-2">
+              <Stethoscope size={16} className="text-rose-500" />
+              Medical Conditions (Optional)
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              {["Diabetes", "Hypertension", "Gastritis", "Uric Acid", "High Cholesterol", "Thyroid", "PCOS", "Celiac Disease", "Lactose Intolerance", "Fatty Liver"].map((disease) => {
+                const isActive = diseases.includes(disease);
+                return (
+                  <button
+                    key={disease}
+                    type="button"
+                    onClick={() => {
+                      if (isActive) setDiseases(diseases.filter(d => d !== disease));
+                      else setDiseases([...diseases, disease]);
+                    }}
+                    className={`rounded-xl border p-3 text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                      isActive
+                        ? "border-rose-400 bg-rose-50 text-rose-700 shadow-sm"
+                        : "border-neutral-200 bg-white/80 text-neutral-500 hover:bg-neutral-50"
+                    }`}
+                  >
+                    <div className={`w-3 h-3 rounded flex items-center justify-center border ${isActive ? "border-rose-500 bg-rose-500" : "border-neutral-300 bg-white"}`}>
+                      {isActive && <div className="w-1.5 h-1.5 bg-white rounded-sm" />}
+                    </div>
+                    {disease}
+                  </button>
+                );
+              })}
+            </div>
+          </label>
+
+          <label className="flex flex-col gap-3">
+            <span className="text-sm font-bold text-neutral-800 flex items-center gap-2">
+              <Leaf size={16} className="text-orange-500" />
+              Geographic Region
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              {["Himalayan", "Hilly", "Terai"].map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setRegion(opt)}
+                  className={`rounded-xl border p-3 text-xs font-bold transition-all ${
+                    region === opt
+                      ? "border-orange-400 bg-orange-50 text-orange-700 shadow-sm"
+                      : "border-neutral-200 bg-white/80 text-neutral-500 hover:bg-neutral-50"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </label>
+
+          <label className="flex flex-col gap-3">
+            <span className="text-sm font-bold text-neutral-800 flex items-center gap-2">
               <Leaf size={16} className="text-orange-500" />
               Ingredient Availability
             </span>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setRegion("standard")}
+                onClick={() => setAvailability("standard")}
                 className={`flex items-center justify-center gap-2 rounded-xl border p-3 text-sm font-bold transition-all ${
-                  region === "standard"
+                  availability === "standard"
                     ? "border-orange-400 bg-orange-50 text-orange-700 shadow-sm"
                     : "border-neutral-200 bg-white/80 text-neutral-500 hover:bg-neutral-50"
                 }`}
@@ -233,9 +379,9 @@ export default function PlannerPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setRegion("rural")}
+                onClick={() => setAvailability("limited")}
                 className={`flex items-center justify-center gap-2 rounded-xl border p-3 text-sm font-bold transition-all ${
-                  region === "rural"
+                  availability === "limited"
                     ? "border-orange-400 bg-orange-50 text-orange-700 shadow-sm"
                     : "border-neutral-200 bg-white/80 text-neutral-500 hover:bg-neutral-50"
                 }`}
@@ -287,6 +433,48 @@ export default function PlannerPage() {
             </button>
           </div>
 
+          {planMeta && (
+            <div className="flex flex-col gap-3 mb-2">
+              <div className="flex flex-wrap gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-700 px-2 py-1 rounded-md">
+                  Region: {planMeta.region}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 px-2 py-1 rounded-md">
+                  Availability: {planMeta.availability === "standard" ? "Standard (City)" : "Limited (Rural)"}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md">
+                  Age Group: {planMeta.ageGroup === "child" ? "Child (<15)" : planMeta.ageGroup === "senior" ? "Senior (>55)" : "Adult"}
+                </span>
+                {planMeta.diseases?.length > 0 && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-rose-100 text-rose-700 px-2 py-1 rounded-md">
+                    Conditions: {planMeta.diseases.join(", ")}
+                  </span>
+                )}
+              </div>
+              <div className="p-3 bg-white/80 rounded-xl border border-neutral-100 text-xs text-neutral-600 font-medium shadow-sm">
+                <span className="font-bold text-neutral-800 block mb-1">Why this plan?</span>
+                Based on food availability in the {planMeta.region} region. 
+                {planMeta.availability === "limited" ? " We selected highly accessible local crops and ingredients." : " Includes a standard variety of ingredients."}
+                {planMeta.ageGroup === "senior" ? " Modified with softer, easy-to-digest foods." : ""}
+                {planMeta.diseases?.length > 0 ? ` Carefully filtered to avoid triggering ${planMeta.diseases.join(" or ")}.` : ""}
+              </div>
+              
+              {aiSummary && (
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 text-xs text-blue-800 font-medium shadow-sm relative overflow-hidden">
+                  <Sparkles size={40} className="absolute -right-2 -top-2 text-blue-200 opacity-50" />
+                  <span className="font-black text-blue-900 flex items-center gap-1.5 mb-1.5"><Sparkles size={14} className="text-blue-500" /> AI Dietitian Summary</span>
+                  {aiSummary}
+                </div>
+              )}
+
+              {planMeta.proteinWarning && (
+                <div className="p-3 bg-red-50 rounded-xl border border-red-100 text-xs text-red-700 font-medium">
+                  ⚠️ {planMeta.proteinWarning}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-col gap-4">
             {[
               { id: "breakfast", label: "Breakfast", icon: Droplet, color: "text-blue-500", bg: "bg-blue-50" },
@@ -328,6 +516,22 @@ export default function PlannerPage() {
               );
             })}
           </div>
+
+          <div className="mt-4 p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-3">
+            <AlertTriangle className="text-rose-600 shrink-0 mt-0.5" size={20} />
+            <div className="text-xs text-rose-800 leading-relaxed font-medium">
+              <strong className="block mb-1">Medical Disclaimer</strong>
+              DietSathi is an AI assistant, not a doctor. Always consult a healthcare professional before changing your diet, especially if managing a chronic illness like diabetes or hypertension.
+            </div>
+          </div>
+
+          <button
+            onClick={savePlan}
+            disabled={isSaving}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-neutral-800 to-neutral-700 px-4 py-3.5 font-bold text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg disabled:opacity-70 disabled:hover:scale-100"
+          >
+            {isSaving ? "Saving..." : <><Save size={18} /> Save Plan to Profile</>}
+          </button>
         </div>
       )}
     </main>

@@ -1,7 +1,15 @@
-export function calculateDailyTargets(weight: number, goal: 'Weight Loss' | 'Muscle Gain' | 'Maintain') {
-  // Base BMR approximation (very simple for UI testing purposes)
-  let baseCalories = weight * 24; 
-  
+export function calculateDailyTargets(weight: number, height: number, gender: 'male' | 'female', goal: 'Weight Loss' | 'Muscle Gain' | 'Maintain', age: number = 25) {
+  // Mifflin-St Jeor Equation for BMR
+  let bmr = (10 * weight) + (6.25 * height) - (5 * age);
+  if (gender === 'male') {
+    bmr += 5;
+  } else {
+    bmr -= 161;
+  }
+
+  // Calculate Total Daily Energy Expenditure (TDEE) assuming a sedentary lifestyle as a safe baseline
+  let baseCalories = bmr * 1.2;
+
   if (goal === 'Weight Loss') {
     baseCalories -= 500;
   } else if (goal === 'Muscle Gain') {

@@ -71,7 +71,7 @@ export default function AddFoodPage() {
 
     const parsedPortion = Number(portionSize);
     if (!Number.isFinite(parsedPortion) || parsedPortion <= 0) {
-      toast.error("Portion size must be greater than 0.");
+      toast.error("Amount in grams must be greater than 0.");
       return;
     }
 
@@ -147,7 +147,7 @@ export default function AddFoodPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-bold text-neutral-800">Portion size</span>
+            <span className="text-sm font-bold text-neutral-800">Amount (grams)</span>
             <input
               className="w-full rounded-xl border border-neutral-200 bg-white/80 px-4 py-3 font-semibold text-neutral-800 outline-none transition-all focus:border-orange-400 focus:ring-4 focus:ring-orange-400/10"
               type="number"

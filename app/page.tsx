@@ -191,13 +191,19 @@ export default function HomePage() {
             )}
           </div>
         </div>
-        <button 
-          className="flex items-center gap-2 rounded-2xl border border-white/60 bg-white/40 backdrop-blur-xl px-4 py-2 text-xs font-bold text-neutral-600 transition-all hover:bg-white/60 hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:-translate-y-0.5" 
-          onClick={onSignOut}
-        >
-          <LogOut size={14} />
-          Sign out
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/profile" className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:-translate-y-0.5">
+            <User size={14} />
+            Saved Plan
+          </Link>
+          <button 
+            className="flex items-center justify-center h-8 w-8 rounded-full border border-white/60 bg-white/40 backdrop-blur-xl text-neutral-600 transition-all hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 shadow-sm" 
+            onClick={onSignOut}
+            title="Sign out"
+          >
+            <LogOut size={14} />
+          </button>
+        </div>
       </header>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-both">

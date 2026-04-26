@@ -8,6 +8,9 @@ import { calculateDailyTargets } from "@/lib/recommendations";
 export default function GoalsPage() {
   const [loading, setLoading] = useState(true);
   const [calcWeight, setCalcWeight] = useState(70);
+  const [calcHeight, setCalcHeight] = useState(165);
+  const [calcAge, setCalcAge] = useState(25);
+  const [calcGender, setCalcGender] = useState<'male' | 'female'>('male');
   const [calcGoal, setCalcGoal] = useState<'Weight Loss' | 'Muscle Gain' | 'Maintain'>('Maintain');
   const [goals, setGoals] = useState({
     calories: 2000,
@@ -33,7 +36,7 @@ export default function GoalsPage() {
   };
 
   const handleAutoCalculate = () => {
-    const targets = calculateDailyTargets(calcWeight, calcGoal);
+    const targets = calculateDailyTargets(calcWeight, calcHeight, calcGender, calcGoal, calcAge);
     setGoals({
       calories: targets.targetCalories,
       protein: targets.targetProtein,
@@ -95,8 +98,44 @@ export default function GoalsPage() {
                 max={200}
               />
             </label>
-            
+
             <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-neutral-600">Height (cm)</span>
+              <input
+                type="number"
+                value={calcHeight}
+                onChange={(e) => setCalcHeight(Number(e.target.value))}
+                className="w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm font-bold text-neutral-800 outline-none focus:border-red-400 focus:ring-4 focus:ring-red-400/10 shadow-sm"
+                min={100}
+                max={250}
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-neutral-600">Age</span>
+              <input
+                type="number"
+                value={calcAge}
+                onChange={(e) => setCalcAge(Number(e.target.value))}
+                className="w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm font-bold text-neutral-800 outline-none focus:border-red-400 focus:ring-4 focus:ring-red-400/10 shadow-sm"
+                min={10}
+                max={100}
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-neutral-600">Gender</span>
+              <select
+                value={calcGender}
+                onChange={(e) => setCalcGender(e.target.value as any)}
+                className="w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm font-bold text-neutral-800 outline-none focus:border-red-400 focus:ring-4 focus:ring-red-400/10 shadow-sm appearance-none"
+              >
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </label>
+            
+            <label className="flex flex-col gap-1.5 sm:col-span-2">
               <span className="text-xs font-bold text-neutral-600">Goal</span>
               <select
                 value={calcGoal}

@@ -14,7 +14,7 @@ export default function DietSathiPreview() {
   const [selectedFood, setSelectedFood] = useState('Dal');
 
   // Running your core calculation logic
-  const targets = calculateDailyTargets(weight, goal);
+  const targets = calculateDailyTargets(weight, 165, 'male', goal, 25);
 
   const foods = ['Dal', 'Bhat (Rice)', 'Masu (Chicken)', 'Tarkari', 'Roti'];
 
