@@ -1,4 +1,4 @@
-# DietSathi
+# Diet Sathi
 
 DietSathi is a Next.js + TypeScript application for nutrition tracking, meal planning, and progress monitoring.
 
