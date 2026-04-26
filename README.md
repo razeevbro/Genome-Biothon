@@ -2,6 +2,13 @@
 
 DietSathi is a Next.js + TypeScript application for nutrition tracking, meal planning, and progress monitoring.
 
+## Problem Statement
+
+Despite the growing awareness of health and fitness, individuals consuming traditional Nepali diets lack accurate, culturally relevant tools to track their nutritional intake. Existing market-leading platforms predominantly feature Western cuisines, provide generic one-size-fits-all recommendations, and fail to engage users effectively, making it exceptionally difficult for the Nepali demographic to accurately track meals, stay motivated, and achieve personalized health goals.
+
+**The Solution:**
+DietSathi bridges this gap by providing a localized, AI-powered nutrition planner specifically tailored for the Nepali demographic. By integrating an authentic Nepali food database, dynamic weight-scaled AI diet generation, robust BMI monitoring, and gamified progress tracking, DietSathi empowers users with a highly personalized, culturally relevant, and engaging health-tracking experience.
+
 ## Tech Stack
 
 - Next.js (App Router)

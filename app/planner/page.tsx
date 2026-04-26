@@ -6,6 +6,7 @@ import { Sparkles, Activity, Target, UtensilsCrossed, Leaf, Droplet, Drumstick }
 export default function PlannerPage() {
   const [goal, setGoal] = useState("maintain");
   const [dietType, setDietType] = useState("veg");
+  const [region, setRegion] = useState("standard");
   
   // Base states in metric
   const [weightKg, setWeightKg] = useState(70);
@@ -55,7 +56,7 @@ export default function PlannerPage() {
       const response = await fetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goal, dietPref: dietType, weight: weightKg })
+        body: JSON.stringify({ goal, dietPref: dietType, weight: weightKg, region })
       });
       const data = await response.json();
       
@@ -193,7 +194,7 @@ export default function PlannerPage() {
                 onClick={() => setDietType("veg")}
                 className={`flex items-center justify-center gap-2 rounded-xl border p-3 text-sm font-bold transition-all ${
                   dietType === "veg"
-                    ? "border-emerald-400 bg-emerald-50 text-emerald-700 shadow-sm"
+                    ? "border-orange-400 bg-orange-50 text-orange-700 shadow-sm"
                     : "border-neutral-200 bg-white/80 text-neutral-500 hover:bg-neutral-50"
                 }`}
               >
@@ -204,11 +205,42 @@ export default function PlannerPage() {
                 onClick={() => setDietType("non-veg")}
                 className={`flex items-center justify-center gap-2 rounded-xl border p-3 text-sm font-bold transition-all ${
                   dietType === "non-veg"
-                    ? "border-rose-400 bg-rose-50 text-rose-700 shadow-sm"
+                    ? "border-orange-400 bg-orange-50 text-orange-700 shadow-sm"
                     : "border-neutral-200 bg-white/80 text-neutral-500 hover:bg-neutral-50"
                 }`}
               >
                 <Drumstick size={16} /> Non-Veg
+              </button>
+            </div>
+          </label>
+
+          <label className="flex flex-col gap-3">
+            <span className="text-sm font-bold text-neutral-800 flex items-center gap-2">
+              <Leaf size={16} className="text-orange-500" />
+              Ingredient Availability
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setRegion("standard")}
+                className={`flex items-center justify-center gap-2 rounded-xl border p-3 text-sm font-bold transition-all ${
+                  region === "standard"
+                    ? "border-orange-400 bg-orange-50 text-orange-700 shadow-sm"
+                    : "border-neutral-200 bg-white/80 text-neutral-500 hover:bg-neutral-50"
+                }`}
+              >
+                Standard (City)
+              </button>
+              <button
+                type="button"
+                onClick={() => setRegion("rural")}
+                className={`flex items-center justify-center gap-2 rounded-xl border p-3 text-sm font-bold transition-all ${
+                  region === "rural"
+                    ? "border-orange-400 bg-orange-50 text-orange-700 shadow-sm"
+                    : "border-neutral-200 bg-white/80 text-neutral-500 hover:bg-neutral-50"
+                }`}
+              >
+                Limited (Rural)
               </button>
             </div>
           </label>
@@ -278,6 +310,19 @@ export default function PlannerPage() {
                   <div className="mt-1">
                     <h3 className="font-bold text-lg text-neutral-900">{data.name}</h3>
                     <p className="text-xs font-medium text-neutral-500 leading-relaxed mt-1">{data.desc}</p>
+                    
+                    {data.alternatives && data.alternatives.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-neutral-100/60">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5 block">Alternatives:</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {data.alternatives.map((alt: string, i: number) => (
+                            <span key={i} className="text-[10px] font-semibold bg-neutral-100/80 text-neutral-600 px-2 py-1 rounded-md">
+                              {alt}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
